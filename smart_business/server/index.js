@@ -197,6 +197,32 @@ async function handlePhoto(message) {
   }
 }
 
+async function processReceiptInBackground(receiptRef, imageBase64) {
+  try {
+    const imageBuffer = Buffer.from(imageBase64, "base64");
+    const rawText = await extractText(imageBuffer);
+    const parsed = parseReceiptText(rawText);
+    const category = categorize(parsed.merchantName, rawText);
+
+    await receiptRef.update({
+      ocr_raw_text: rawText,
+      merchant_name: parsed.merchantName,
+      total_amount: parsed.totalAmount,
+      transaction_date: parsed.transactionDate
+        ? Timestamp.fromDate(parsed.transactionDate)
+        : null,
+      category,
+      items: parsed.items,
+      status: "needs_review",
+    });
+  } catch (error) {
+    console.error("OCR processing failed for", receiptRef.id, error);
+    await receiptRef.update({
+      status: "needs_review",
+    });
+  }
+}
+
 app.post("/webhook", async (req, res) => {
   try {
     const message = req.body.message;
@@ -245,6 +271,24 @@ app.post("/webhook", async (req, res) => {
 app.get("/", (req, res) => {
   res.send("Smart Business Receipt Scanner server is running.");
 });
+
+async function recoverStuckProcessingReceipts() {
+  const snapshot = await db.collectionGroup("items")
+    .where("status", "==", "processing")
+    .get();
+  if (snapshot.empty) {
+    console.log("No stuck receipts to recover");
+    return;
+  }
+  const batch = db.batch();
+  snapshot.docs.forEach((doc) => {
+    batch.update(doc.ref, { status: "needs_review" });
+  });
+  await batch.commit();
+  console.log(`Recovered ${snapshot.size} stuck receipts`);
+}
+
+recoverStuckProcessingReceipts().catch(console.error);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
