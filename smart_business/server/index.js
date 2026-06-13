@@ -157,6 +157,7 @@ async function handlePhoto(message) {
       .doc();
 
     await receiptRef.set({
+      source: "telegram",
       telegram_message_id: message.message_id,
       image_base64: imageBase64,
       ocr_raw_text: rawText,
