@@ -341,6 +341,17 @@ app.post(
   }
 );
 
+app.use((err, req, res, next) => {
+  if (err.type === "entity.too.large") {
+    return res.status(413).json({ error: "payload_too_large" });
+  }
+  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+    return res.status(400).json({ error: "bad_request", message: "Invalid JSON" });
+  }
+  console.error("Unhandled error:", err);
+  res.status(500).json({ error: "internal" });
+});
+
 async function recoverStuckProcessingReceipts() {
   const snapshot = await db.collectionGroup("items")
     .where("status", "==", "processing")
