@@ -276,6 +276,71 @@ app.get("/", (req, res) => {
   res.send("Smart Business Receipt Scanner server is running.");
 });
 
+app.post(
+  "/scan-receipt",
+  express.json({ limit: "10mb" }),
+  async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res
+          .status(401)
+          .json({ error: "unauthorized", message: "Missing bearer token" });
+      }
+      const idToken = authHeader.split(" ")[1];
+
+      let decoded;
+      try {
+        decoded = await admin.auth().verifyIdToken(idToken);
+      } catch (e) {
+        return res
+          .status(401)
+          .json({ error: "unauthorized", message: "Invalid token" });
+      }
+
+      const { image_base64 } = req.body;
+      if (!image_base64 || typeof image_base64 !== "string") {
+        return res.status(400).json({
+          error: "bad_request",
+          message: "image_base64 required",
+        });
+      }
+
+      const uid = decoded.uid;
+      const receiptRef = db
+        .collection("receipts")
+        .doc(uid)
+        .collection("items")
+        .doc();
+
+      await receiptRef.set({
+        source: "flutter",
+        telegram_message_id: null,
+        image_base64,
+        ocr_raw_text: "",
+        merchant_name: "",
+        total_amount: 0,
+        currency: "IDR",
+        transaction_date: null,
+        category: "other",
+        items: [],
+        status: "processing",
+        created_at: Timestamp.now(),
+        confirmed_at: null,
+      });
+
+      res.status(200).json({ receipt_id: receiptRef.id, status: "processing" });
+
+      processReceiptInBackground(receiptRef, image_base64).catch((err) =>
+        console.error("Background OCR failed:", err)
+      );
+    } catch (error) {
+      console.error("Scan receipt error:", error);
+      res.status(500).json({ error: "internal" });
+    }
+  }
+);
+
 async function recoverStuckProcessingReceipts() {
   const snapshot = await db.collectionGroup("items")
     .where("status", "==", "processing")
