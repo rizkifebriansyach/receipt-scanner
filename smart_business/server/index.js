@@ -216,10 +216,14 @@ async function processReceiptInBackground(receiptRef, imageBase64) {
       status: "needs_review",
     });
   } catch (error) {
-    console.error("OCR processing failed for", receiptRef.id, error);
-    await receiptRef.update({
-      status: "needs_review",
-    });
+    console.error(`OCR processing failed for ${receiptRef.id}:`, error);
+    try {
+      await receiptRef.update({
+        status: "needs_review",
+      });
+    } catch (updateError) {
+      console.error(`Failed to update receipt status after OCR error for ${receiptRef.id}:`, updateError);
+    }
   }
 }
 
@@ -280,6 +284,8 @@ async function recoverStuckProcessingReceipts() {
     console.log("No stuck receipts to recover");
     return;
   }
+  // Firestore batch limit is 500 ops; acceptable for solo-user use case.
+  // If this ever scales, chunk into multiple batches.
   const batch = db.batch();
   snapshot.docs.forEach((doc) => {
     batch.update(doc.ref, { status: "needs_review" });
