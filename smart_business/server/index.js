@@ -20,7 +20,6 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const PORT = process.env.PORT || 3000;
 
 const app = express();
-app.use(express.json());
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat("id-ID", {
@@ -227,7 +226,7 @@ async function processReceiptInBackground(receiptRef, imageBase64) {
   }
 }
 
-app.post("/webhook", async (req, res) => {
+app.post("/webhook", express.json(), async (req, res) => {
   try {
     const message = req.body.message;
     if (!message) {
@@ -360,13 +359,13 @@ async function recoverStuckProcessingReceipts() {
     console.log("No stuck receipts to recover");
     return;
   }
-  // Firestore batch limit is 500 ops; acceptable for solo-user use case.
-  // If this ever scales, chunk into multiple batches.
-  const batch = db.batch();
-  snapshot.docs.forEach((doc) => {
-    batch.update(doc.ref, { status: "needs_review" });
-  });
-  await batch.commit();
+  const BATCH_LIMIT = 500;
+  for (let i = 0; i < snapshot.docs.length; i += BATCH_LIMIT) {
+    const chunk = snapshot.docs.slice(i, i + BATCH_LIMIT);
+    const batch = db.batch();
+    chunk.forEach((doc) => batch.update(doc.ref, { status: "needs_review" }));
+    await batch.commit();
+  }
   console.log(`Recovered ${snapshot.size} stuck receipts`);
 }
 
