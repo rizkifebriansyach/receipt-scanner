@@ -4,14 +4,14 @@ class AppBarLayout extends StatelessWidget {
   final Widget child;
   final String title;
   final List<Widget>? actions;
-  final bool showNotification;
+  final bool search;
 
   const AppBarLayout({
     super.key,
     required this.child,
-    this.title = 'Warehouse Pro',
+    this.title = 'Scanner',
     this.actions,
-    this.showNotification = true,
+    this.search = true,
   });
 
   @override
@@ -27,11 +27,11 @@ class AppBarLayout extends StatelessWidget {
           ),
         ),
         actions: [
-          if (showNotification)
+          if (search)
             IconButton(
               onPressed: () {},
               icon: const Icon(
-                Icons.notifications_none,
+                Icons.search,
               ),
             ),
 
