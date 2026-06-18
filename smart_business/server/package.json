@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node index.js",
-    "test": "jest",
-    "test:watch": "jest --watch",
+    "test": "DOCKER_HOST=unix:///var/run/docker.sock jest",
+    "test:watch": "DOCKER_HOST=unix:///var/run/docker.sock jest --watch",
     "migrate": "knex migrate:latest",
     "migrate:rollback": "knex migrate:rollback",
     "migrate:make": "knex migrate:make"

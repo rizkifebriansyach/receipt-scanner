@@ -7,8 +7,8 @@ exports.up = async function (knex) {
     table.string("display_name", 255);
     table.bigInteger("telegram_chat_id").unique();
     table.specificType("link_code", "char(6)");
-    table.timestamptz("link_code_expires_at");
-    table.timestamptz("created_at").notNullable().defaultTo(knex.fn.now());
+    table.specificType("link_code_expires_at", "timestamptz");
+    table.specificType("created_at", "timestamptz").notNullable().defaultTo(knex.fn.now());
   });
 
   await knex.raw(
@@ -36,8 +36,8 @@ exports.up = async function (knex) {
     table.date("transaction_date");
     table.string("category", 64).notNullable().defaultTo("other");
     table.specificType("status", "varchar(32)").notNullable().defaultTo("processing");
-    table.timestamptz("created_at").notNullable().defaultTo(knex.fn.now());
-    table.timestamptz("confirmed_at");
+    table.specificType("created_at", "timestamptz").notNullable().defaultTo(knex.fn.now());
+    table.specificType("confirmed_at", "timestamptz");
   });
 
   await knex.raw(
@@ -70,7 +70,7 @@ exports.up = async function (knex) {
     table.string("name", 255).notNullable();
     table.integer("qty").notNullable().defaultTo(1);
     table.bigInteger("price").notNullable().defaultTo(0);
-    table.timestamptz("created_at").notNullable().defaultTo(knex.fn.now());
+    table.specificType("created_at", "timestamptz").notNullable().defaultTo(knex.fn.now());
   });
 
   await knex.raw("ALTER TABLE receipt_items ADD CONSTRAINT receipt_items_qty_check CHECK (qty > 0)");
