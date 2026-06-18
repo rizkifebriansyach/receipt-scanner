@@ -125,6 +125,19 @@ class _RegisterPageState extends State<RegisterPage> {
                             // Handle registration logic here
                           },
                         ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text("Already have an account?"),
+                            TextButton(
+                              onPressed: () {
+                                // Navigate to login page
+                              },
+                              child: Text("Sign In", style: TextStyle(color: Colors.purple)),
+                            ),
+                          ],
+                        )
                       ],
                     ),
                   ),
