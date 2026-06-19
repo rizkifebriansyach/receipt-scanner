@@ -2,8 +2,6 @@ require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
 const admin = require("./lib/firebase");
-const { getFirestore, Timestamp } = require("firebase-admin/firestore");
-const db = getFirestore();
 
 const { sendMessage, getFileUrl } = require("./lib/telegram");
 const { extractText } = require("./lib/ocr");
@@ -315,6 +313,10 @@ async function recoverStuckProcessingReceipts() {
 
 recoverStuckProcessingReceipts().catch(console.error);
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+module.exports = app;
+
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
