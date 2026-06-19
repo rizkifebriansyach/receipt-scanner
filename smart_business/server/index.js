@@ -9,6 +9,9 @@ const { sendMessage, getFileUrl } = require("./lib/telegram");
 const { extractText } = require("./lib/ocr");
 const { parseReceiptText } = require("./lib/parser");
 const { categorize } = require("./lib/categorizer");
+const storage = require("./lib/storage");
+const receiptsRepo = require("./lib/repositories/receipts");
+const crypto = require("crypto");
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const PORT = process.env.PORT || 3000;
@@ -118,50 +121,26 @@ async function handlePhoto(message) {
     });
     const imageBuffer = Buffer.from(imageResponse.data);
 
-    const imageBase64 = imageBuffer.toString("base64");
+    const receiptId = crypto.randomUUID();
+    const imagePath = `receipts/${user.firebase_uid}/${receiptId}.jpg`;
 
-    const rawText = await extractText(imageBuffer);
+    await storage.putObject(imagePath, imageBuffer, "image/jpeg");
 
-    const parsed = parseReceiptText(rawText);
-
-    const category = categorize(parsed.merchantName, rawText);
-
-    const receiptRef = db
-      .collection("receipts")
-      .doc(user.uid)
-      .collection("items")
-      .doc();
-
-    await receiptRef.set({
+    const receipt = await receiptsRepo.create({
+      user_id: user.firebase_uid,
       source: "telegram",
+      image_path: imagePath,
       telegram_message_id: message.message_id,
-      image_base64: imageBase64,
-      ocr_raw_text: rawText,
-      merchant_name: parsed.merchantName,
-      total_amount: parsed.totalAmount,
-      currency: "IDR",
-      transaction_date: parsed.transactionDate
-        ? Timestamp.fromDate(parsed.transactionDate)
-        : null,
-      category,
-      items: parsed.items,
-      status: "needs_review",
-      created_at: Timestamp.now(),
-      confirmed_at: null,
     });
 
-    const dateStr = parsed.transactionDate
-      ? parsed.transactionDate.toLocaleDateString("id-ID")
-      : "unknown date";
+    processReceiptInBackground(receipt.id, user.firebase_uid, imageBuffer).catch((err) =>
+      console.error("Background OCR failed:", err)
+    );
+
     await sendMessage(
       BOT_TOKEN,
       chatId,
-      `Receipt received!\n\n` +
-        `Merchant: ${parsed.merchantName}\n` +
-        `Amount: ${formatCurrency(parsed.totalAmount)}\n` +
-        `Date: ${dateStr}\n` +
-        `Category: ${category}\n\n` +
-        `Please review and confirm in the app.`,
+      "Receipt received! I'll process it and you can review it in the app.",
     );
   } catch (error) {
     console.error("Receipt processing error:", error);
@@ -173,32 +152,33 @@ async function handlePhoto(message) {
   }
 }
 
-async function processReceiptInBackground(receiptRef, imageBase64) {
+async function processReceiptInBackground(receiptId, userId, imageBuffer) {
   try {
-    const imageBuffer = Buffer.from(imageBase64, "base64");
     const rawText = await extractText(imageBuffer);
     const parsed = parseReceiptText(rawText);
     const category = categorize(parsed.merchantName, rawText);
 
-    await receiptRef.update({
+    await receiptsRepo.update(receiptId, userId, {
       ocr_raw_text: rawText,
       merchant_name: parsed.merchantName,
       total_amount: parsed.totalAmount,
       transaction_date: parsed.transactionDate
-        ? Timestamp.fromDate(parsed.transactionDate)
+        ? parsed.transactionDate.toISOString().split("T")[0]
         : null,
       category,
-      items: parsed.items,
+      items: parsed.items.map((item) => ({
+        name: item.name,
+        qty: item.qty,
+        price: item.price,
+      })),
       status: "needs_review",
     });
   } catch (error) {
-    console.error(`OCR processing failed for ${receiptRef.id}:`, error);
+    console.error(`OCR processing failed for ${receiptId}:`, error);
     try {
-      await receiptRef.update({
-        status: "needs_review",
-      });
+      await receiptsRepo.update(receiptId, userId, { status: "needs_review" });
     } catch (updateError) {
-      console.error(`Failed to update receipt status after OCR error for ${receiptRef.id}:`, updateError);
+      console.error(`Failed to update receipt status after OCR error for ${receiptId}:`, updateError);
     }
   }
 }
