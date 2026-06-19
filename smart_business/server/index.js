@@ -305,21 +305,12 @@ app.use((err, req, res, next) => {
 });
 
 async function recoverStuckProcessingReceipts() {
-  const snapshot = await db.collectionGroup("items")
-    .where("status", "==", "processing")
-    .get();
-  if (snapshot.empty) {
+  const count = await receiptsRepo.markStuckAsNeedsReview();
+  if (count > 0) {
+    console.log(`Recovered ${count} stuck receipts`);
+  } else {
     console.log("No stuck receipts to recover");
-    return;
   }
-  const BATCH_LIMIT = 500;
-  for (let i = 0; i < snapshot.docs.length; i += BATCH_LIMIT) {
-    const chunk = snapshot.docs.slice(i, i + BATCH_LIMIT);
-    const batch = db.batch();
-    chunk.forEach((doc) => batch.update(doc.ref, { status: "needs_review" }));
-    await batch.commit();
-  }
-  console.log(`Recovered ${snapshot.size} stuck receipts`);
 }
 
 recoverStuckProcessingReceipts().catch(console.error);
