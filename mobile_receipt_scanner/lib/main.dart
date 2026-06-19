@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'presentation/pages/auth/register_page.dart';
-import 'presentation/pages/on_boarding/on_boarding_page.dart';
+import 'presentation/pages/auth/login/login_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +15,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: RegisterPage(),
+      home: LoginPage(),
     );
   }
 }
