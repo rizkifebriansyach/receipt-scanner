@@ -263,31 +263,27 @@ app.post(
       }
 
       const uid = decoded.uid;
-      const receiptRef = db
-        .collection("receipts")
-        .doc(uid)
-        .collection("items")
-        .doc();
 
-      await receiptRef.set({
-        source: "flutter",
-        telegram_message_id: null,
-        image_base64,
-        ocr_raw_text: "",
-        merchant_name: "",
-        total_amount: 0,
-        currency: "IDR",
-        transaction_date: null,
-        category: "other",
-        items: [],
-        status: "processing",
-        created_at: Timestamp.now(),
-        confirmed_at: null,
+      await usersRepo.upsertFromFirebase({
+        firebase_uid: uid,
+        email: decoded.email,
       });
 
-      res.status(200).json({ receipt_id: receiptRef.id, status: "processing" });
+      const imageBuffer = Buffer.from(image_base64, "base64");
+      const receiptId = crypto.randomUUID();
+      const imagePath = `receipts/${uid}/${receiptId}.jpg`;
 
-      processReceiptInBackground(receiptRef, image_base64).catch((err) =>
+      await storage.putObject(imagePath, imageBuffer, "image/jpeg");
+
+      const receipt = await receiptsRepo.create({
+        user_id: uid,
+        source: "flutter",
+        image_path: imagePath,
+      });
+
+      res.status(200).json({ receipt_id: receipt.id, status: "processing" });
+
+      processReceiptInBackground(receipt.id, uid, imageBuffer).catch((err) =>
         console.error("Background OCR failed:", err)
       );
     } catch (error) {
