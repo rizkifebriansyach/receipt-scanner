@@ -8,9 +8,9 @@
     "dev": "node index.js",
     "test": "DOCKER_HOST=unix:///var/run/docker.sock jest",
     "test:watch": "DOCKER_HOST=unix:///var/run/docker.sock jest --watch",
-    "migrate": "knex migrate:latest",
-    "migrate:rollback": "knex migrate:rollback",
-    "migrate:make": "knex migrate:make"
+    "migrate": "knex migrate:latest --knexfile db/knexfile.js",
+    "migrate:rollback": "knex migrate:rollback --knexfile db/knexfile.js",
+    "migrate:make": "knex migrate:make --knexfile db/knexfile.js"
   },
   "keywords": [],
   "author": "",

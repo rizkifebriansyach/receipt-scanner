@@ -7,4 +7,4 @@ RUN npm ci --omit=dev
 
 COPY . .
 
-CMD ["sh", "-c", "npx knex migrate:latest && node index.js"]
+CMD ["sh", "-c", "npx knex migrate:latest --knexfile db/knexfile.js && node index.js"]

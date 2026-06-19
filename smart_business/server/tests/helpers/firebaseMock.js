@@ -2,9 +2,9 @@ function mockFirebaseAdmin({ uid = "test-uid-1", email = "test@example.com" } = 
   const verifyIdToken = jest.fn().mockResolvedValue({ uid, email });
   jest.doMock("../../lib/firebase", () => ({
     auth: () => ({ verifyIdToken }),
-    apps: [],
+    getApps: () => [],
     initializeApp: jest.fn(),
-    credential: { cert: jest.fn() },
+    cert: jest.fn(),
   }));
   return { verifyIdToken, uid, email };
 }

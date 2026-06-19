@@ -45,7 +45,8 @@ services:
       "
 
   server:
-    build: .
+    build:
+      context: ./server
     restart: unless-stopped
     depends_on:
       postgres:
