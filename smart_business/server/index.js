@@ -23,14 +23,10 @@ function formatCurrency(amount) {
   }).format(amount);
 }
 
+const usersRepo = require("./lib/repositories/users");
+
 async function findUserByTelegramChatId(chatId) {
-  const snapshot = await db
-    .collection("users")
-    .where("telegram_chat_id", "==", chatId)
-    .limit(1)
-    .get();
-  if (snapshot.empty) return null;
-  return { uid: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+  return await usersRepo.findByTelegramChatId(chatId);
 }
 
 async function handleStart(chatId) {
@@ -51,15 +47,9 @@ async function handleStart(chatId) {
 }
 
 async function handleLink(chatId, code) {
-  const now = Timestamp.now();
-  const snapshot = await db
-    .collection("users")
-    .where("link_code", "==", code)
-    .where("link_code_expires_at", ">", now)
-    .limit(1)
-    .get();
+  const user = await usersRepo.findByLinkCode(code);
 
-  if (snapshot.empty) {
+  if (!user) {
     await sendMessage(
       BOT_TOKEN,
       chatId,
@@ -68,10 +58,7 @@ async function handleLink(chatId, code) {
     return;
   }
 
-  const docRef = snapshot.docs[0].ref;
-  const userData = snapshot.docs[0].data();
-
-  if (userData.telegram_chat_id) {
+  if (user.telegram_chat_id) {
     await sendMessage(
       BOT_TOKEN,
       chatId,
@@ -80,11 +67,7 @@ async function handleLink(chatId, code) {
     return;
   }
 
-  await docRef.update({
-    telegram_chat_id: chatId,
-    link_code: null,
-    link_code_expires_at: null,
-  });
+  await usersRepo.linkTelegram(user.firebase_uid, chatId);
 
   await sendMessage(
     BOT_TOKEN,
