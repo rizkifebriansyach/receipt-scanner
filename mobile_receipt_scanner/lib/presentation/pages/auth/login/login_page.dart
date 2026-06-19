@@ -102,7 +102,20 @@ class _RegisterPageState extends State<LoginPage> {
                             hint: "Enter your password",
                             prefixIcon: Icons.lock_outline,
                           ),
-                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  // Navigate to login page
+                                },
+                                child: Text(
+                                  "Forgot Password?",
+                                  style: TextStyle(color: Colors.purple),
+                                ),
+                              ),
+                            ],
+                          ),
                           AppButton(
                             backgroundColor: Colors.transparent,
                             gradient: LinearGradient(
@@ -119,21 +132,7 @@ class _RegisterPageState extends State<LoginPage> {
                               style: TextStyle(fontSize: 16),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              TextButton(
-                                onPressed: () {
-                                  // Navigate to login page
-                                },
-                                child: Text(
-                                  "Forgot Password?",
-                                  style: TextStyle(color: Colors.purple),
-                                ),
-                              ),
-                            ],
-                          ),
+                          
                           const SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
