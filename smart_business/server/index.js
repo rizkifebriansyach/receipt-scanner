@@ -1,6 +1,8 @@
 require("dotenv").config();
 const express = require("express");
+const swaggerUi = require("swagger-ui-express");
 const receiptsRepo = require("./lib/repositories/receipts");
+const swaggerSpec = require("./lib/swagger");
 
 const webhookRoutes = require("./routes/webhook");
 const scanReceiptRoutes = require("./routes/scanReceipt");
@@ -13,6 +15,8 @@ const app = express();
 app.use("/webhook", webhookRoutes);
 app.use("/scan-receipt", scanReceiptRoutes);
 app.use("/receipts", receiptsRoutes);
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/api-docs.json", (req, res) => res.json(swaggerSpec));
 
 app.get("/", (req, res) => {
   res.send("Smart Business Receipt Scanner server is running.");

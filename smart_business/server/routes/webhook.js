@@ -158,6 +158,40 @@ async function handlePhoto(BOT_TOKEN, message) {
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
+/**
+ * @openapi
+ * /webhook:
+ *   post:
+ *     tags: [Telegram]
+ *     summary: Telegram bot webhook
+ *     description: |
+ *       Receives Telegram bot updates. No authentication — the endpoint must
+ *       only be reachable by Telegram's servers (configure a reverse proxy or
+ *       set the webhook URL to a non-guessable path in production).
+ *
+ *       Supported commands: `/start`, `/help`, `/link <code>`, `/status`.
+ *       Sending a photo triggers OCR processing; the user receives an
+ *       acknowledgment message immediately and can review the parsed receipt
+ *       in the mobile app once OCR completes.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: Telegram Update object. See https://core.telegram.org/bots/api#update.
+ *     responses:
+ *       200:
+ *         description: Update processed (or ignored if no message).
+ *         content:
+ *           text/plain:
+ *             schema: { type: string, example: OK }
+ *       500:
+ *         description: Internal error during processing.
+ *         content:
+ *           text/plain:
+ *             schema: { type: string }
+ */
 router.post("/", express.json(), async (req, res) => {
   try {
     const message = req.body.message;

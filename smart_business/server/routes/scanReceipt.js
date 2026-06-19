@@ -42,6 +42,37 @@ async function processReceiptInBackground(receiptId, userId, imageBuffer) {
   }
 }
 
+/**
+ * @openapi
+ * /scan-receipt:
+ *   post:
+ *     tags: [Scan]
+ *     summary: Upload a receipt image for OCR processing
+ *     description: |
+ *       Accepts a base64-encoded image from the mobile app, stores it in MinIO,
+ *       creates a receipt row in `processing` state, and runs OCR asynchronously.
+ *       The mobile app polls `GET /receipts/{receipt_id}` until `status` changes
+ *       to `needs_review` (success) or remains stuck at `processing` (failure).
+ *
+ *       The user is upserted from the Firebase ID token claims so the `user_id`
+ *       foreign key is satisfied.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { $ref: "#/components/schemas/ScanReceiptRequest" }
+ *     responses:
+ *       200:
+ *         description: Receipt accepted; OCR running in background.
+ *         content:
+ *           application/json:
+ *             schema: { $ref: "#/components/schemas/ScanReceiptResponse" }
+ *       400: { description: Missing or invalid image_base64, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+ *       401: { description: Missing or invalid bearer token, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+ *       413: { description: Payload too large (max 10MB), content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+ */
 router.post(
   "/",
   express.json({ limit: "10mb" }),

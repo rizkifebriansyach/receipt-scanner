@@ -71,3 +71,19 @@ describe("POST /scan-receipt", () => {
     expect(res.body.status).toBe("processing");
   });
 });
+
+describe("Swagger docs", () => {
+  it("serves interactive UI at /docs", async () => {
+    const res = await request(app).get("/docs/");
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("Swagger UI");
+  });
+
+  it("serves OpenAPI spec at /api-docs.json", async () => {
+    const res = await request(app).get("/api-docs.json");
+    expect(res.status).toBe(200);
+    expect(res.body.openapi).toBe("3.0.0");
+    expect(res.body.paths["/scan-receipt"]).toBeTruthy();
+    expect(res.body.paths["/receipts/{id}"]).toBeTruthy();
+  });
+});

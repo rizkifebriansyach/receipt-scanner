@@ -7,6 +7,50 @@ const router = express.Router();
 
 router.use(requireAuth);
 
+/**
+ * @openapi
+ * /receipts:
+ *   get:
+ *     tags: [Receipts]
+ *     summary: List the current user's receipts
+ *     description: Returns receipts newest-first, scoped to the authenticated user. Supports filtering by status, category, and transaction date range, plus pagination.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [processing, needs_review, confirmed, rejected] }
+ *       - in: query
+ *         name: category
+ *         schema: { type: string }
+ *       - in: query
+ *         name: from
+ *         schema: { type: string, format: date }
+ *         description: Inclusive lower bound on transaction_date (YYYY-MM-DD).
+ *       - in: query
+ *         name: to
+ *         schema: { type: string, format: date }
+ *         description: Inclusive upper bound on transaction_date (YYYY-MM-DD).
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *     responses:
+ *       200:
+ *         description: Receipt list.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items: { $ref: "#/components/schemas/Receipt" }
+ *       401:
+ *         description: Missing or invalid bearer token.
+ *         content:
+ *           application/json:
+ *             schema: { $ref: "#/components/schemas/Error" }
+ */
 router.get("/", async (req, res) => {
   try {
     const { status, category, from, to, page, limit } = req.query;
@@ -25,6 +69,28 @@ router.get("/", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /receipts/{id}:
+ *   get:
+ *     tags: [Receipts]
+ *     summary: Get a single receipt with its items
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: The receipt with items.
+ *         content:
+ *           application/json:
+ *             schema: { $ref: "#/components/schemas/Receipt" }
+ *       401: { description: Unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+ *       404: { description: Receipt not found for this user, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+ */
 router.get("/:id", async (req, res) => {
   try {
     const receipt = await receiptsRepo.findByIdForUser(req.params.id, req.user.uid);
@@ -36,6 +102,35 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /receipts/{id}:
+ *   patch:
+ *     tags: [Receipts]
+ *     summary: Update editable fields on a receipt
+ *     description: Updates only the supplied fields. Setting `status` to `confirmed` stamps `confirmed_at`. `items` are not editable via this endpoint.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { $ref: "#/components/schemas/UpdateReceiptRequest" }
+ *     responses:
+ *       200:
+ *         description: Updated receipt.
+ *         content:
+ *           application/json:
+ *             schema: { $ref: "#/components/schemas/Receipt" }
+ *       400: { description: No valid fields supplied, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+ *       401: { description: Unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+ *       404: { description: Receipt not found for this user, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+ */
 router.patch("/:id", express.json(), async (req, res) => {
   try {
     const allowedFields = [
@@ -63,6 +158,30 @@ router.patch("/:id", express.json(), async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /receipts/{id}/image:
+ *   get:
+ *     tags: [Receipts]
+ *     summary: Get a short-lived signed URL for the receipt image
+ *     description: Returns a 302 redirect to a MinIO presigned URL valid for 60 seconds. The mobile app should follow the redirect (or use the Location header directly).
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       302:
+ *         description: Redirect to presigned URL.
+ *         headers:
+ *           Location:
+ *             schema: { type: string, format: uri }
+ *             description: Presigned MinIO URL valid for 60 seconds.
+ *       401: { description: Unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+ *       404: { description: Receipt not found for this user, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+ */
 router.get("/:id/image", async (req, res) => {
   try {
     const receipt = await receiptsRepo.findByIdForUser(req.params.id, req.user.uid);
