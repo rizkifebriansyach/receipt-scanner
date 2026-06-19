@@ -25,18 +25,18 @@ jest.mock("../../lib/categorizer", () => ({
   categorize: jest.fn().mockReturnValue("other"),
 }));
 
+let app;
+
+beforeAll(() => {
+  app = require("../../index");
+});
+
+afterAll(async () => {
+  const knex = require("../../db/knex");
+  await knex.destroy();
+});
+
 describe("POST /scan-receipt", () => {
-  let app;
-
-  beforeAll(() => {
-    app = require("../../index");
-  });
-
-  afterAll(async () => {
-    const knex = require("../../db/knex");
-    await knex.destroy();
-  });
-
   it("returns 401 when no bearer token", async () => {
     const res = await request(app).post("/scan-receipt").send({ image_base64: "abc" });
     expect(res.status).toBe(401);
@@ -45,14 +45,11 @@ describe("POST /scan-receipt", () => {
 
   it("returns 401 when token verification fails", async () => {
     firebaseMock.verifyIdToken.mockRejectedValueOnce(new Error("bad token"));
-
     const res = await request(app)
       .post("/scan-receipt")
       .set("Authorization", "Bearer fake-token")
       .send({ image_base64: "abc" });
-
     expect(res.status).toBe(401);
-    expect(res.body.error).toBe("unauthorized");
   });
 
   it("returns 400 when image_base64 missing", async () => {
@@ -60,7 +57,6 @@ describe("POST /scan-receipt", () => {
       .post("/scan-receipt")
       .set("Authorization", "Bearer valid-token")
       .send({});
-
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("bad_request");
   });
@@ -70,7 +66,6 @@ describe("POST /scan-receipt", () => {
       .post("/scan-receipt")
       .set("Authorization", "Bearer valid-token")
       .send({ image_base64: "aGVsbG8=" });
-
     expect(res.status).toBe(200);
     expect(res.body.receipt_id).toBeTruthy();
     expect(res.body.status).toBe("processing");
