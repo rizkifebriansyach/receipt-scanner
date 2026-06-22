@@ -113,7 +113,6 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         const SizedBox(height: 24),
                         AppButton(
-                          child: Text("Sign Up", style: TextStyle(fontSize: 16)),
                           backgroundColor: Colors.transparent,
                           gradient: LinearGradient(
                             colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
@@ -124,6 +123,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           onPressed: () {
                             // Handle registration logic here
                           },
+                          child: Text("Sign Up", style: TextStyle(fontSize: 16)),
                         ),
                         const SizedBox(height: 16),
                         Row(

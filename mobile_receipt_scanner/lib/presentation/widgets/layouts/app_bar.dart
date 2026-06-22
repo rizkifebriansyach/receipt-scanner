@@ -5,6 +5,7 @@ class AppBarLayout extends StatelessWidget {
   final String title;
   final List<Widget>? actions;
   final bool search;
+  final Color textColor;
 
   const AppBarLayout({
     super.key,
@@ -12,6 +13,7 @@ class AppBarLayout extends StatelessWidget {
     this.title = 'Scanner',
     this.actions,
     this.search = true,
+    this.textColor = Colors.black,
   });
 
   @override
@@ -22,27 +24,18 @@ class AppBarLayout extends StatelessWidget {
         centerTitle: true,
         title: Text(
           title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
         ),
         actions: [
           if (search)
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(
-                Icons.search,
-              ),
-            ),
+            IconButton(onPressed: () {}, icon: const Icon(Icons.search, color: Colors.deepPurple,)),
 
           ...?actions,
 
           const SizedBox(width: 8),
         ],
       ),
-      body: SafeArea(
-        child: child,
-      ),
+      body: SafeArea(child: child),
     );
   }
 }

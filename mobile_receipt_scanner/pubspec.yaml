@@ -50,6 +50,7 @@ dependencies:
   flutter_svg: ^2.3.0
   fl_chart: ^1.2.0
   carousel_slider: ^5.1.2
+  clipboard: ^3.0.14
 
 dev_dependencies:
   flutter_test:

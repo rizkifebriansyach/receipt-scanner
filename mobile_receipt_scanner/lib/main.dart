@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import 'presentation/pages/auth/login/login_page.dart';
+import 'package:mobile_receipt_scanner/presentation/pages/telegram_linked/telegram_linked_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,8 +13,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
-      theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: LoginPage(),
+      theme: ThemeData(
+        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        scaffoldBackgroundColor: Color(0xffEDE0FF),
+      ),
+      home: TelegramLinkedPage(),
     );
   }
 }

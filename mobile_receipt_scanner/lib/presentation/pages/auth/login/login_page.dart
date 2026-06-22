@@ -160,7 +160,7 @@ class _RegisterPageState extends State<LoginPage> {
                             ]
                           ),
                           const SizedBox(height: 16),
-                         Container(
+                         SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
                               onPressed: () {

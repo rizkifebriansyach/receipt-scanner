@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 enum ButtonVariant { primary, secondary, outline, ghost }
+
 enum ButtonSize { small, medium, large }
 
 class AppButton extends StatelessWidget {
@@ -12,6 +13,7 @@ class AppButton extends StatelessWidget {
 
   final bool isLoading;
   final bool fullWidth;
+  final bool isAuth;
   final IconData? icon;
   final double? iconSpacing;
   final Color? textColor;
@@ -26,6 +28,7 @@ class AppButton extends StatelessWidget {
     this.size = ButtonSize.medium,
     this.isLoading = false,
     this.fullWidth = true,
+    this.isAuth = true,
     this.icon,
     this.iconSpacing = 8,
     this.textColor,
@@ -49,26 +52,29 @@ class AppButton extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: gradient,
           borderRadius: BorderRadius.circular(dimension.radius),
-          color: gradient == null ?(backgroundColor ??style.backgroundColor) : null,
-          border: style.border == BorderSide.none ? null : Border.fromBorderSide(style.border),
-
+          color: gradient == null
+              ? (backgroundColor ?? style.backgroundColor)
+              : null,
+          border: style.border == BorderSide.none
+              ? null
+              : Border.fromBorderSide(style.border),
         ),
-        child:ElevatedButton(
-        onPressed: _isEnabled ? onPressed : null,
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          backgroundColor: backgroundColor ?? style.backgroundColor,
-          foregroundColor: textColor ?? style.foregroundColor,
-          shadowColor: Colors.transparent,
-          padding: dimension.padding,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(dimension.radius),
-            side: style.border,
+        child: ElevatedButton(
+          onPressed: _isEnabled ? onPressed : null,
+          style: ElevatedButton.styleFrom(
+            elevation: 0,
+            backgroundColor: backgroundColor ?? style.backgroundColor,
+            foregroundColor: textColor ?? style.foregroundColor,
+            shadowColor: Colors.transparent,
+            padding: dimension.padding,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(dimension.radius),
+              side: style.border,
+            ),
           ),
+          child: _buildContent(theme),
         ),
-        child: _buildContent(theme),
       ),
-      )
     );
   }
 
@@ -84,17 +90,29 @@ class AppButton extends StatelessWidget {
       );
     }
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        child,
-        if (icon != null) ...[
-          SizedBox(width: iconSpacing),
-          Icon(icon, size: 18),
-        ],
-      ],
-    );
+    return (isAuth == true)
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              child,
+              if (icon != null) ...[
+                SizedBox(width: iconSpacing),
+                Icon(icon, size: 18),
+              ],
+            ],
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 18),
+                SizedBox(width: iconSpacing),
+              ],
+              child,
+            ],
+          );
   }
 }
 
@@ -110,17 +128,18 @@ class _ButtonStyle {
   });
 
   factory _ButtonStyle.from(
-      BuildContext context,
-      ButtonVariant variant,
-      bool enabled,
-      ) {
+    BuildContext context,
+    ButtonVariant variant,
+    bool enabled,
+  ) {
     final theme = Theme.of(context);
 
     switch (variant) {
       case ButtonVariant.primary:
         return _ButtonStyle(
-          backgroundColor:
-              enabled ? theme.colorScheme.primary : Colors.grey.shade300,
+          backgroundColor: enabled
+              ? theme.colorScheme.primary
+              : Colors.grey.shade300,
           foregroundColor: Colors.white,
           border: BorderSide.none,
         );
