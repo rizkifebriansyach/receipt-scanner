@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "299828656376",
+    "project_id": "smart-business-receipt",
+    "storage_bucket": "smart-business-receipt.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:299828656376:android:a57c1820a7f321c1cd230d",
+        "android_client_info": {
+          "package_name": "com.rizki.mobile_receipt_scanner"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "299828656376-r5qvqi98lffbgbsv8t9bmhbaqp11mkff.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5vRkeH6rlA6NunIEsE3gtNoX6R6GDars"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "299828656376-r5qvqi98lffbgbsv8t9bmhbaqp11mkff.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

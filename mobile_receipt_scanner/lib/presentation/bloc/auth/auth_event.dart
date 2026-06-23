@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../domain/models/user.dart' as user_model;
+import '../../../domain/entities/user.dart' as user_model;
 
 abstract class AuthEvent extends Equatable {
   const AuthEvent();
