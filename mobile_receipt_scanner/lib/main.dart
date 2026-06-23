@@ -1,23 +1,37 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile_receipt_scanner/presentation/pages/telegram_linked/telegram_linked_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Receipt Scanner',
       theme: ThemeData(
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-        scaffoldBackgroundColor: Color(0xffEDE0FF),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        scaffoldBackgroundColor: const Color(0xffEDE0FF),
       ),
-      home: TelegramLinkedPage(),
+      home: const _PlaceholderHome(),
+    );
+  }
+}
+
+class _PlaceholderHome extends StatelessWidget {
+  const _PlaceholderHome();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Text('Firebase initialized — auth routing coming next'),
+      ),
     );
   }
 }
