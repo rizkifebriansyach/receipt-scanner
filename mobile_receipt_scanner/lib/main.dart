@@ -4,15 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/router/app_router.dart';
-import 'domain/models/user.dart';
+import 'domain/entities/user.dart';
+import 'injection.dart';
 import 'presentation/bloc/auth/auth_bloc.dart';
 import 'presentation/bloc/auth/auth_event.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await configureDependencies();
 
-  final authBloc = AuthBloc();
+  final authBloc = getIt<AuthBloc>();
 
   FirebaseAuth.instance.authStateChanges().listen((firebaseUser) {
     if (firebaseUser != null) {

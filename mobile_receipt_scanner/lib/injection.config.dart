@@ -19,6 +19,7 @@ import 'domain/usecases/google_sign_in_usecase.dart' as _i501;
 import 'domain/usecases/login_usecase.dart' as _i883;
 import 'domain/usecases/logout_usecase.dart' as _i808;
 import 'domain/usecases/register_usecase.dart' as _i784;
+import 'presentation/bloc/auth/auth_bloc.dart' as _i605;
 
 extension GetItInjectableX on _i174.GetIt {
   // initializes the registration of main-scope dependencies inside of GetIt
@@ -44,6 +45,14 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i784.RegisterUseCase>(
       () => _i784.RegisterUseCase(gh<_i716.AuthRepository>()),
+    );
+    gh.factory<_i605.AuthBloc>(
+      () => _i605.AuthBloc(
+        loginUseCase: gh<_i883.LoginUseCase>(),
+        registerUseCase: gh<_i784.RegisterUseCase>(),
+        googleSignInUseCase: gh<_i501.GoogleSignInUseCase>(),
+        logoutUseCase: gh<_i808.LogoutUseCase>(),
+      ),
     );
     return this;
   }

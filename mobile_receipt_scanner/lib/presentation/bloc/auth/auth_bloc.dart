@@ -1,20 +1,30 @@
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:injectable/injectable.dart';
 
-import '../../../domain/models/user.dart';
+import '../../../domain/usecases/google_sign_in_usecase.dart';
+import '../../../domain/usecases/login_usecase.dart';
+import '../../../domain/usecases/logout_usecase.dart';
+import '../../../domain/usecases/register_usecase.dart';
+import '../../../domain/usecases/usecase.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
+@injectable
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final firebase_auth.FirebaseAuth _firebaseAuth;
-  final GoogleSignIn _googleSignIn;
+  final LoginUseCase _loginUseCase;
+  final RegisterUseCase _registerUseCase;
+  final GoogleSignInUseCase _googleSignInUseCase;
+  final LogoutUseCase _logoutUseCase;
 
   AuthBloc({
-    firebase_auth.FirebaseAuth? firebaseAuth,
-    GoogleSignIn? googleSignIn,
-  })  : _firebaseAuth = firebaseAuth ?? firebase_auth.FirebaseAuth.instance,
-        _googleSignIn = googleSignIn ?? GoogleSignIn(),
+    required LoginUseCase loginUseCase,
+    required RegisterUseCase registerUseCase,
+    required GoogleSignInUseCase googleSignInUseCase,
+    required LogoutUseCase logoutUseCase,
+  })  : _loginUseCase = loginUseCase,
+        _registerUseCase = registerUseCase,
+        _googleSignInUseCase = googleSignInUseCase,
+        _logoutUseCase = logoutUseCase,
         super(const AuthInitial()) {
     on<AuthStatusChanged>(_onStatusChanged);
     on<AuthRegisterRequested>(_onRegisterRequested);
@@ -36,19 +46,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
-    try {
-      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+    final result = await _registerUseCase(
+      RegisterParams(
         email: event.email,
         password: event.password,
-      );
-      await credential.user?.updateDisplayName(event.displayName);
-      final user = _mapFirebaseUser(credential.user!);
-      emit(Authenticated(user));
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      emit(AuthError(_mapFirebaseError(e.code)));
-    } catch (_) {
-      emit(const AuthError('Registration failed. Please try again.'));
-    }
+        displayName: event.displayName,
+      ),
+    );
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (user) => emit(Authenticated(user)),
+    );
   }
 
   Future<void> _onLoginRequested(
@@ -56,18 +64,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
-    try {
-      final credential = await _firebaseAuth.signInWithEmailAndPassword(
+    final result = await _loginUseCase(
+      LoginParams(
         email: event.email,
         password: event.password,
-      );
-      final user = _mapFirebaseUser(credential.user!);
-      emit(Authenticated(user));
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      emit(AuthError(_mapFirebaseError(e.code)));
-    } catch (_) {
-      emit(const AuthError('Login failed. Please try again.'));
-    }
+      ),
+    );
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (user) => emit(Authenticated(user)),
+    );
   }
 
   Future<void> _onGoogleSignInRequested(
@@ -75,65 +81,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
-    try {
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        emit(const Unauthenticated());
-        return;
-      }
-      final googleAuth = await googleUser.authentication;
-      final credential = firebase_auth.GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-        accessToken: googleAuth.accessToken,
-      );
-      final userCredential =
-          await _firebaseAuth.signInWithCredential(credential);
-      final user = _mapFirebaseUser(userCredential.user!);
-      emit(Authenticated(user));
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      emit(AuthError(_mapFirebaseError(e.code)));
-    } catch (_) {
-      emit(const AuthError('Google sign-in failed. Please try again.'));
-    }
+    final result = await _googleSignInUseCase(const NoParams());
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (user) => emit(Authenticated(user)),
+    );
   }
 
   Future<void> _onLogoutRequested(
     AuthLogoutRequested event,
     Emitter<AuthState> emit,
   ) async {
-    try {
-      await _firebaseAuth.signOut();
-      await _googleSignIn.signOut();
-      emit(const Unauthenticated());
-    } catch (_) {
-      emit(const AuthError('Logout failed.'));
-    }
-  }
-
-  User _mapFirebaseUser(firebase_auth.User firebaseUser) {
-    return User(
-      uid: firebaseUser.uid,
-      email: firebaseUser.email ?? '',
-      displayName: firebaseUser.displayName,
+    emit(const AuthLoading());
+    final result = await _logoutUseCase(const NoParams());
+    result.fold(
+      (failure) => emit(AuthError(failure.message)),
+      (_) => emit(const Unauthenticated()),
     );
-  }
-
-  String _mapFirebaseError(String code) {
-    switch (code) {
-      case 'email-already-in-use':
-        return 'Email is already registered.';
-      case 'invalid-email':
-        return 'Invalid email address.';
-      case 'weak-password':
-        return 'Password is too weak (min 6 characters).';
-      case 'user-not-found':
-        return 'No account found with this email.';
-      case 'wrong-password':
-        return 'Wrong password.';
-      case 'invalid-credential':
-        return 'Invalid email or password.';
-      default:
-        return 'Authentication failed. Please try again.';
-    }
   }
 }
