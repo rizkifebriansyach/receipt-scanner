@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:injectable/injectable.dart';
 
@@ -38,17 +39,23 @@ class AuthRemoteDataSource {
   }
 
   Future<User> googleSignIn() async {
-    final googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) {
-      throw AuthCancelledException();
+    try {
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        throw AuthCancelledException();
+      }
+      final googleAuth = await googleUser.authentication;
+      final credential = firebase_auth.GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+        accessToken: googleAuth.accessToken,
+      );
+      final userCredential = await _firebaseAuth.signInWithCredential(credential);
+      return _mapFirebaseUser(userCredential.user!);
+    } on PlatformException catch (e) {
+      throw AuthPlatformException(e.message ?? 'Google Sign-In platform error');
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      throw AuthPlatformException(mapFirebaseError(e.code));
     }
-    final googleAuth = await googleUser.authentication;
-    final credential = firebase_auth.GoogleAuthProvider.credential(
-      idToken: googleAuth.idToken,
-      accessToken: googleAuth.accessToken,
-    );
-    final userCredential = await _firebaseAuth.signInWithCredential(credential);
-    return _mapFirebaseUser(userCredential.user!);
   }
 
   Future<void> logout() async {
@@ -76,8 +83,10 @@ class AuthRemoteDataSource {
         return 'Wrong password.';
       case 'invalid-credential':
         return 'Invalid email or password.';
+      case 'operation-not-allowed':
+        return 'Email/password sign-in is not enabled. Contact support.';
       default:
-        return 'Authentication failed. Please try again.';
+        return 'Something went wrong. Please try again.';
     }
   }
 
@@ -91,3 +100,8 @@ class AuthRemoteDataSource {
 }
 
 class AuthCancelledException implements Exception {}
+
+class AuthPlatformException implements Exception {
+  final String message;
+  AuthPlatformException(this.message);
+}

@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:firebase_core/firebase_core.dart';
 import 'package:injectable/injectable.dart';
 
 import '../../domain/entities/user.dart';
@@ -45,8 +46,10 @@ class AuthRepositoryImpl implements AuthRepository {
       return Right(user);
     } on AuthCancelledException {
       return const Left(AuthFailure('Google sign-in was cancelled.'));
+    } on AuthPlatformException catch (e) {
+      return Left(AuthFailure(e.message));
     } catch (_) {
-      return const Left(AuthFailure('Google sign-in failed.'));
+      return const Left(AuthFailure('Google sign-in failed. Please try again.'));
     }
   }
 
@@ -73,8 +76,10 @@ class AuthRepositoryImpl implements AuthRepository {
       return Right(user);
     } on firebase_auth.FirebaseAuthException catch (e) {
       return Left(AuthFailure(_remoteDataSource.mapFirebaseError(e.code)));
+    } on FirebaseException catch (e) {
+      return Left(AuthFailure(_remoteDataSource.mapFirebaseError(e.code)));
     } catch (_) {
-      return const Left(AuthFailure('Authentication failed.'));
+      return const Left(AuthFailure('Something went wrong. Please try again.'));
     }
   }
 }
