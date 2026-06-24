@@ -7,6 +7,7 @@ const swaggerSpec = require("./lib/swagger");
 const webhookRoutes = require("./routes/webhook");
 const scanReceiptRoutes = require("./routes/scanReceipt");
 const receiptsRoutes = require("./routes/receipts");
+const usersRoutes = require("./routes/users");
 
 const PORT = process.env.PORT || 3000;
 
@@ -15,6 +16,7 @@ const app = express();
 app.use("/webhook", webhookRoutes);
 app.use("/scan-receipt", scanReceiptRoutes);
 app.use("/receipts", receiptsRoutes);
+app.use("/users", usersRoutes);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get("/api-docs.json", (req, res) => res.json(swaggerSpec));
 
